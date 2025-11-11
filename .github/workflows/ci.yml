@@ -1,5 +1,6 @@
-name: Django API CI
+name: Django CRM API CI
 
+# Trigger on pushes or PRs to main or develop
 on:
   push:
     branches: [ main, develop ]
@@ -10,26 +11,28 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.13
-    - run: pip install pipenv
-    - run: pipenv install --dev
-    - run: pipenv run python manage.py test
+      # Step 1: Check out the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      # Step 3: Install pipenv and dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --dev
+
+      # Step 4: Run Django migrations (SQLite)
+      - name: Run migrations
+        run: pipenv run python manage.py migrate
+
+      # Step 5: Run tests
+      - name: Run tests
+        run: pipenv run python manage.py test
