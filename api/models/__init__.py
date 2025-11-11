@@ -1,4 +1,4 @@
-from .users import *
+from .agents import *
 from .contacts import *
 from .leads import *
 from .listings import *
