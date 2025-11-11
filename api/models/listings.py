@@ -1,5 +1,5 @@
 from django.db import models
-from .users import User
+from .agents import Agent
 from .leads import Lead
 
 class Listing(models.Model):
@@ -10,7 +10,7 @@ class Listing(models.Model):
     bathrooms = models.IntegerField()
     sqft = models.IntegerField()
     photo_url = models.URLField(blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    agent = models.ForeignKey(Agent, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
