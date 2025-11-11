@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,3 +49,9 @@ def login_user(request):
             "user": UserSerializer(user).data
         })
     return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
