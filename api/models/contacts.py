@@ -1,5 +1,7 @@
 from django.db import models
 from .agent_profiles import AgentProfile
+from .sources import Source
+from .tags import Tag
 
 
 class Contact(models.Model):
