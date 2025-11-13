@@ -1,5 +1,5 @@
 from django.db import models
-from .agents import Agent
+from .agent_profiles import AgentProfile
 from .leads import Lead
 from .listings import Listing
 
@@ -11,7 +11,7 @@ class AddOn(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class Order(models.Model):
-    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='orders')
+    agent = models.ForeignKey(AgentProfile, on_delete=models.CASCADE, related_name='orders')
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='orders')
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=[('pending','Pending'),('paid','Paid'),('fulfilled','Fulfilled')], default='pending')
