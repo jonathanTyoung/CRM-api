@@ -22,6 +22,7 @@ class AgentProfile(models.Model):
         default="agent",   # could also be "admin"
         choices=[
             ("agent", "Agent"),
+            ("operations", "Operations Manager"),
             ("admin", "Administrator"),
             ("team_lead", "Team Lead"),
         ]
