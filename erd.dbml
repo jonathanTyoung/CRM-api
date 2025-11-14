@@ -1,0 +1,210 @@
+Table users {
+  id int pk
+  first_name varchar
+  last_name varchar
+  email varchar
+  role varchar          // 'admin', 'agent'
+  password_hash varchar
+  created_at datetime
+  updated_at datetime
+}
+
+Table contacts {
+  id int pk
+  first_name varchar
+  last_name varchar
+  email varchar
+  phone varchar
+  owner_id int [ref: > users.id]  // the agent who added it
+  source_id int [ref: > sources.id]
+  created_at datetime
+  updated_at datetime
+}
+
+Table sources {
+  id int pk
+  name varchar          // e.g., 'Referral', 'Website', 'Open House'
+  created_at datetime
+  updated_at datetime
+}
+
+Table tags {
+  id int pk
+  name varchar          // e.g., 'buyer', 'relocation', 'seller'
+  created_at datetime
+  updated_at datetime
+}
+
+Table contact_tags {
+  id int pk
+  contact_id int        [ref: > contacts.id]
+  tag_id int [ref: > tags.id]
+}
+
+Table leads {
+  id int pk
+  contact_id int [ref: > contacts.id]
+  assigned_agent_id int [ref: > users.id]
+  group_id int [ref: > lead_groups.id]
+  type varchar           // e.g., 'buying', 'selling'
+  status varchar          // 'new', 'contacted', 'pending_offer', 'closed'
+  notes text
+  source_id int [ref: > sources.id] // snapshot from contact
+  created_at datetime
+  updated_at datetime
+}
+
+Table lead_groups {
+  id int pk
+  name varchar
+  agent_id int [ref: > users.id]     // owner of the group
+  description text
+  created_at datetime
+  updated_at datetime
+}
+
+Table transfer_requests {
+  id int pk
+  entity_type varchar   // 'lead', 'contact', or 'lead_group'
+  entity_id int
+  from_agent_id int [ref: > users.id]
+  to_agent_id int [ref: > users.id]
+  approved_by_id int [ref: > users.id, null]
+  status varchar         // 'pending', 'accepted', 'declined'
+  created_at datetime
+  responded_at datetime
+}
+
+Table lead_assignment_history {
+  id int pk
+  lead_id int           [ref: > leads.id]
+  previous_agent_id int [ref: > users.id]
+  new_agent_id int      [ref: > users.id]
+  changed_by_id int     [ref: > users.id]
+  changed_at datetime
+}
+
+Table add_ons {
+  id int pk
+  name varchar
+  price numeric
+  description text
+  created_at datetime
+  updated_at datetime
+}
+
+Table orders {
+  id int pk
+  user_id int           [ref: > users.id]
+  lead_id int           // FK -> leads.id
+  total_price numeric
+  status varchar        // 'pending', 'paid', 'fulfilled'
+  created_at datetime
+  updated_at datetime
+}
+
+Table order_items {
+  id int pk
+  order_id int          [ref: > orders.id]
+  add_on_id int         [ref: > add_ons.id]
+  quantity int
+  price numeric
+  created_at datetime
+  updated_at datetime
+}
+
+Table payments {
+  id int pk
+  order_id int          [ref: > orders.id]
+  amount numeric
+  payment_method varchar
+  status varchar        // 'pending', 'completed', 'refunded'
+  transaction_id varchar
+  created_at datetime
+  updated_at datetime
+}
+
+Table contracts {
+  id int pk
+  lead_id int           [ref: > leads.id]
+  document_url varchar
+  status varchar        // 'draft', 'sent', 'signed'
+  signed_at datetime
+  created_at datetime
+  updated_at datetime
+}
+
+Table emails_sent {
+  id int pk
+  lead_id int           [ref: > leads.id]
+  agent_id int          [ref: > users.id]
+  recipient_email varchar
+  subject varchar
+  message text
+  sent_at datetime
+  status varchar        // 'sent', 'failed'
+  created_at datetime
+  updated_at datetime
+}
+
+Table email_templates {
+  id int pk
+  name varchar
+  subject varchar
+  body text
+  created_by int          [ref: > users.id]
+  created_at datetime
+  updated_at datetime
+}
+
+Table listings {
+  id int pk
+  mls_id varchar          // imported from MLS/IDX
+  address varchar
+  price numeric
+  bedrooms int
+  bathrooms int
+  sqft int
+  photo_url varchar       // optional single image
+  user_id int             [ref: > users.id] //(assigned agent)
+  created_at datetime
+  updated_at datetime
+}
+
+Table lead_listings {
+  id int pk
+  lead_id int             [ref: > leads.id]
+  listing_id int          [ref: > listings.id]
+  notes text              // optional notes about lead interest
+  created_at datetime
+}
+
+Table activities {
+  id int pk
+  user_id int [ref: > users.id]
+  lead_id int [ref: > leads.id, null]
+  contact_id int [ref: > contacts.id, null]
+  type varchar  // 'note', 'call', 'meeting', 'status_change'
+  message text
+  created_at datetime
+}
+
+// contacts.source_id --> sources.id
+// contact_tags.contact_id --> contacts.id
+// contact_tags.tag_id --> tags.id
+// leads.contact_id --> contacts.id
+// leads.assigned_agent_id --> users.id
+// leads.source_id --> sources.id
+// lead_assignment_history.lead_id --> leads.id
+// lead_assignment_history.previous_agent_id --> users.id
+// lead_assignment_history.new_agent_id --> users.id
+// lead_assignment_history.changed_by_id --> users.id
+// orders.lead_id --> leads.id
+// orders.user_id --> users.id
+// order_items.order_id --> orders.id
+// order_items.add_on_id --> add_ons.id
+// payments.order_id --> orders.id
+// contracts.lead_id --> leads.id
+// emails_sent.lead_id --> leads.id
+// emails_sent.agent_id --> users.id
+// listings.user_id --> users.id
