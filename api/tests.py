@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
+from api.models import AgentProfile
 
 
 class AuthTests(APITestCase):
@@ -32,7 +33,7 @@ class AuthTests(APITestCase):
 
     def test_login_user(self):
         """Ensure a user can log in using email and password."""
-        # Create user manually (using email for username)
+        # Create user manually (email used as username)
         User.objects.create_user(
             username=self.user_data['email'],
             email=self.user_data['email'],
@@ -52,25 +53,20 @@ class AuthTests(APITestCase):
 
     def test_current_user_requires_auth(self):
         """Ensure current_user returns info only when authenticated."""
-        # Create the user
-        user = User.objects.create_user(
+        User.objects.create_user(
             username=self.user_data['email'],
             email=self.user_data['email'],
             password=self.user_data['password']
         )
 
-        # Login to get access token
         login_response = self.client.post(self.login_url, {
             "email": self.user_data['email'],
             "password": self.user_data['password']
         }, format='json')
 
         access = login_response.data['access']
-
-        # Set authorization header
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
 
-        # Now try to fetch current user
         response = self.client.get(self.current_user_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], self.user_data['email'])
@@ -79,3 +75,16 @@ class AuthTests(APITestCase):
         """Ensure unauthorized requests get rejected."""
         response = self.client.get(self.current_user_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_agent_profile_created_on_register(self):
+        """Ensure an AgentProfile is automatically created when a user registers."""
+        response = self.client.post(self.register_url, self.user_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user = User.objects.get(email=self.user_data["email"])
+
+        # Ensure profile exists via signals
+        self.assertTrue(hasattr(user, "agent_profile"))
+
+        profile = user.agent_profile
+        self.assertEqual(profile.user, user)

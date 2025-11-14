@@ -1,7 +1,9 @@
+from typing import ClassVar
 from django.db import models
 from django.contrib.auth.models import User
 
 class AgentProfile(models.Model):
+    objects: ClassVar[models.Manager]
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
