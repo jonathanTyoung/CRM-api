@@ -4,9 +4,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework import routers
 from api.views.auth import register_user, login_user, current_user
 from api.views.agent_profiles import AgentProfileViewSet
+from api.views.contacts import ContactViewSet
+from api.views.leads import LeadViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register(r"agent-profiles", AgentProfileViewSet, basename="agent-profiles")
+router.register(r'contacts', ContactViewSet, basename='contact')
+router.register(r'leads', LeadViewSet, basename='lead')
 
 urlpatterns = [
     path("", include(router.urls)),
