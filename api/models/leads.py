@@ -1,4 +1,3 @@
-from typing import ClassVar
 from django.db import models
 from django.contrib.auth.models import User
 from .contacts import Contact
@@ -6,7 +5,6 @@ from .sources import Source
 from .lead_groups import LeadGroup
 
 class Lead(models.Model):
-    objects: ClassVar[models.Manager]
     STATUS_CHOICES = [
         ('new', 'New'),
         ('contacted', 'Contacted'),

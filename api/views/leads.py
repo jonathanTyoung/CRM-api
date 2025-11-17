@@ -1,11 +1,10 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 from api.models import Lead
-from api.serializers.leads import (
-    LeadSerializer,
-    LeadCreateUpdateSerializer
-)
+from api.serializers.leads import LeadSerializer, LeadCreateUpdateSerializer
 
 
 class LeadViewSet(ModelViewSet):
@@ -16,11 +15,11 @@ class LeadViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Admins get all leads
+        # Admins get everything
         if user.is_staff or user.is_superuser:
             return Lead.objects.all().order_by("-created_at")
 
-        # Agents only see leads assigned to them
+        # Agents only see their assigned leads
         return Lead.objects.filter(
             assigned_agent=user
         ).order_by("-created_at")
@@ -30,20 +29,31 @@ class LeadViewSet(ModelViewSet):
             return LeadCreateUpdateSerializer
         return LeadSerializer
 
-    def perform_create(self, serializer):
-        """
-        Automatically assign lead to logged-in agent.
-        """
-        serializer.save(assigned_agent=self.request.user)
+    # ---------------------------
+    # CREATE
+    # ---------------------------
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    def perform_update(self, serializer):
-        """
-        Optional: ensure only assigned agents can update.
-        """
+        lead = serializer.save()  # assigned agent comes from serializer.create()
+
+        return Response(LeadSerializer(lead).data, status=status.HTTP_201_CREATED)
+
+    # ---------------------------
+    # UPDATE
+    # ---------------------------
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
-        # If you want:
-        # if instance.assigned_agent != self.request.user:
-        #     raise PermissionDenied("You cannot modify this lead.")
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
 
-        serializer.save()
+        lead = serializer.save()
+
+        return Response(LeadSerializer(lead).data, status=status.HTTP_200_OK)

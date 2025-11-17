@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Contact, Tag, Source, AgentProfile
+from api.models import Contact, Tag, Source
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -19,8 +19,6 @@ class SourceSerializer(serializers.ModelSerializer):
 # ---------------------------
 
 class ContactSerializer(serializers.ModelSerializer):
-    """Serializer used for GET requests."""
-
     tags = TagSerializer(many=True, read_only=True)
     source = SourceSerializer(read_only=True)
     owner = serializers.CharField(source="owner.user.get_full_name", read_only=True)
@@ -44,14 +42,12 @@ class ContactSerializer(serializers.ModelSerializer):
 # ---------------------------
 # WRITE SERIALIZER
 # ---------------------------
+
 class ContactCreateUpdateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for POST/PUT
-    Accepts tag_ids and source_id
-    """
 
     tag_ids = serializers.ListField(
-        child=serializers.IntegerField(), required=False
+        child=serializers.IntegerField(),
+        required=False
     )
     source_id = serializers.IntegerField(required=False, allow_null=True)
 
@@ -69,9 +65,7 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tag_ids = validated_data.pop("tag_ids", [])
         source_id = validated_data.pop("source_id", None)
-
-        # Get owner injected from ViewSet perform_create()
-        owner: AgentProfile = validated_data.pop("owner")
+        owner = self.context["owner"]  # <-- USE CONTEXT, NOT validated_data
 
         contact = Contact.objects.create(
             owner=owner,
@@ -89,11 +83,10 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
         tag_ids = validated_data.pop("tag_ids", None)
         source_id = validated_data.pop("source_id", None)
 
-        # Update basic fields
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
-        if source_id:
+        if source_id is not None:
             instance.source = Source.objects.get(pk=source_id)
 
         instance.save()
