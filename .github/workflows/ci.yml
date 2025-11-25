@@ -1,4 +1,4 @@
-name: Django API CI
+name: Django CRM API CI
 
 on:
   push:
@@ -8,28 +8,53 @@ on:
 
 jobs:
   test:
+    name: Run Backend Tests
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: project.settings
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.13
-    - run: pip install pipenv
-    - run: pipenv install --dev
-    - run: pipenv run python manage.py test
+      # Step 1: Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'     # more stable than 3.13
+
+      # Step 3: Cache Pipenv + virtualenv
+      - name: Cache pipenv + virtualenv
+        uses: actions/cache@v3
+        id: cache-pipenv
+        with:
+          path: |
+            ~/.local/share/virtualenvs
+            ~/.cache/pipenv
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --dev --system --deploy
+
+      # Step 5: Run migrations
+      - name: Run migrations
+        run: python manage.py migrate
+
+      # Step 6: Run tests
+      - name: Run tests
+        run: python manage.py test
+
+      # Optional: Coverage report
+      # - name: Run coverage
+      #   run: |
+      #     pip install coverage
+      #     coverage run manage.py test
+      #     coverage report -m

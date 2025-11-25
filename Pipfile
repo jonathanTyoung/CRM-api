@@ -12,6 +12,7 @@ python-dotenv = "*"
 autopep8 = "*"
 pylint = "*"
 pylint-django = "*"
+django-filter = "*"
 
 [dev-packages]
 

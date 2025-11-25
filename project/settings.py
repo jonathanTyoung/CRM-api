@@ -20,7 +20,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'api',
+    # 'api',
+    'api.apps.ApiConfig',
+    'django_filters'
 ]
 
 REST_FRAMEWORK = {
@@ -30,6 +32,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_FILTER_BACKENDS': [
+        "django_filters.rest_framework.DjangoFilterBackend"
+    ]
 }
 
 SIMPLE_JWT = {
