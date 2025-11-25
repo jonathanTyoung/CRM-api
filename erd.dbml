@@ -21,6 +21,22 @@ Table contacts {
   updated_at datetime
 }
 
+Table opportunities {
+  id int pk
+  contact_id int         [ref: > contacts.id]
+  lead_id int            [ref: > leads.id, null] // Created from a lead (optional)
+  assigned_agent_id int  [ref: > users.id]
+  title varchar          // "John Smith - Buying 123 Main St"
+  deal_type varchar      // 'buyer', 'seller', 'investor'
+  property_address varchar
+  mls_id varchar         // null
+  stage varchar          // pipeline: 'prospecting', 'showing', 'offer', 'contract', 'closing', 'closed'
+  price numeric          // property price or expected deal value
+  estimated_close_date datetime // null
+  created_at datetime
+  updated_at datetime
+}
+
 Table sources {
   id int pk
   name varchar          // e.g., 'Referral', 'Website', 'Open House'

@@ -14,3 +14,4 @@ from .payments import Payment
 from .sources import Source
 from .tags import Tag
 from .transfer_requests import TransferRequest
+from .opportunities import Opportunity
