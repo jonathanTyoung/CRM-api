@@ -9,9 +9,12 @@ class Lead(models.Model):
         ('new', 'New'),
         ('contacted', 'Contacted'),
         ('nurturing', 'Nurturing'),
-        ('qualified', 'Qualified'),
-        ('converted', 'Converted'),
-        ('dead', 'Dead'),
+        ('appointment_set', 'Appointment Set'),
+        ('appointment_held', 'Appointment Held'),
+        ('agreement_signed', 'Agreement Signed'),
+        ('listed_or_showing', 'Listed/Showing'),
+        ('contract_accepted', 'Contract Accepted'),
+        ('closed', 'Listed/Closed'),
     ]
 
     TYPE_CHOICES = [

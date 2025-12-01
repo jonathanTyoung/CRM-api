@@ -6,8 +6,8 @@ from .tags import Tag
 
 class Contact(models.Model):
     RELATIONSHIP_CHOICES = [
-        ('prospect', 'Prospect'),        # default when converted from Lead
-        ('client', 'Client'),            # buyer/seller who closed a deal
+        ('prospect', 'Prospect'),
+        ('client', 'Client'),
         ('past_client', 'Past Client'),
         ('referral', 'Referral Source'),
         ('vendor', 'Vendor / Business Contact'),
@@ -15,9 +15,11 @@ class Contact(models.Model):
     ]
 
     first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
+
+    notes = models.TextField(blank=True, null=True)
 
     owner = models.ForeignKey(
         AgentProfile,
@@ -44,4 +46,5 @@ class Contact(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        last = f" {self.last_name}" if self.last_name else ""
+        return f"{self.first_name}{last}"

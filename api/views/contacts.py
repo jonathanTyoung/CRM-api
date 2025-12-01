@@ -15,6 +15,9 @@ class ContactViewSet(ModelViewSet):
 
     permission_classes = [IsAuthenticated]
 
+    # ---------------------------
+    # QUERYSET SCOPING
+    # ---------------------------
     def get_queryset(self):
         user = self.request.user
 
@@ -23,43 +26,42 @@ class ContactViewSet(ModelViewSet):
 
         return Contact.objects.filter(owner=user.agent_profile)
 
+    # ---------------------------
+    # READ vs WRITE Serializers
+    # ---------------------------
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return ContactCreateUpdateSerializer
         return ContactSerializer
 
     # ---------------------------
-    # CREATE
+    # ONE PLACE TO ADD CONTEXT
+    # ---------------------------
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["owner"] = self.request.user.agent_profile
+        return context
+
+    # ---------------------------
+    # CREATE (Use DRF default, but return read format)
     # ---------------------------
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            data=request.data,
-            context={"owner": request.user.agent_profile}   # <-- FIXED
-        )
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
 
-        self.perform_create(serializer)
-
-        read_serializer = ContactSerializer(serializer.instance)
+        read_serializer = ContactSerializer(instance)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
-    def perform_create(self, serializer):
-        serializer.save()   # <-- DO NOT PASS owner HERE ANYMORE
-
     # ---------------------------
-    # UPDATE
+    # UPDATE (PATCH or PUT)
     # ---------------------------
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial,
-            context={"owner": request.user.agent_profile}  # <-- SAFE & CONSISTENT
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        instance = serializer.save()
 
         return Response(ContactSerializer(instance).data)
