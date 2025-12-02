@@ -16,7 +16,7 @@ class LeadTests(APITestCase):
             password="testpassword"
         )
 
-        # Login
+        # Login agent1
         login_res = self.client.post(reverse("login_user"), {
             "email": "agent1@example.com",
             "password": "testpassword"
@@ -50,16 +50,19 @@ class LeadTests(APITestCase):
         res = self.client.post(self.list_url, self.payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
         lead = Lead.objects.get(id=res.data["id"])
         self.assertEqual(lead.assigned_agent, self.user)
 
     def test_list_leads(self):
         """Agent only sees their own leads."""
+        # Create lead for agent1
         self.client.post(self.list_url, self.payload, format="json")
 
         res = self.client.get(self.list_url)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
+        self.assertEqual(len(res.data["results"]), 1)  # <-- FIXED
 
     def test_retrieve_lead(self):
         """Agent can retrieve their own lead."""
@@ -73,11 +76,11 @@ class LeadTests(APITestCase):
         self.assertEqual(res2.data["id"], lid)
 
     def test_agent_cannot_see_other_agents_leads(self):
-        """Leads must not be visible across agent boundaries."""
+        """Leads must NOT be visible across agents."""
         res = self.client.post(self.list_url, self.payload, format="json")
         lid = res.data["id"]
 
-        # Create user2
+        # Create agent2
         user2 = User.objects.create_user(
             username="agent2@example.com",
             email="agent2@example.com",
@@ -92,6 +95,7 @@ class LeadTests(APITestCase):
         token2 = login2.data["access"]
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token2}")
 
+        # agent2 should NOT see agent1's lead
         url = reverse("lead-detail", args=[lid])
         res2 = self.client.get(url)
 
@@ -114,7 +118,7 @@ class LeadTests(APITestCase):
         lid = res.data["id"]
 
         url = reverse("lead-detail", args=[lid])
-        res2 = self.client.delete(url)
+        delete_res = self.client.delete(url)
 
-        self.assertEqual(res2.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Lead.objects.count(), 0)
+        self.assertEqual(delete_res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Lead.objects.count(), 0)  # <-- FIXED
