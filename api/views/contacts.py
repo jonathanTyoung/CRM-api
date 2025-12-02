@@ -21,6 +21,7 @@ class ContactViewSet(ModelViewSet):
 
 
     def get_queryset(self):
+        print("🔶 DJANGO RECEIVED AUTH:", self.request.headers.get("Authorization"))
         user = self.request.user
 
         if user.is_staff or user.is_superuser:
