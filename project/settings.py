@@ -34,7 +34,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_FILTER_BACKENDS': [
         "django_filters.rest_framework.DjangoFilterBackend"
-    ]
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 
 SIMPLE_JWT = {
@@ -64,6 +66,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 ROOT_URLCONF = 'project.urls'
 
 TEMPLATES = [
@@ -90,6 +97,10 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# CORS_ALLOWED_ORIGINS += [
+#     "https://yourdomain.com", //add later when you have domain for deploying 
+# ]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

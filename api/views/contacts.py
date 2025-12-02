@@ -18,13 +18,17 @@ class ContactViewSet(ModelViewSet):
     # ---------------------------
     # QUERYSET SCOPING
     # ---------------------------
+
+
     def get_queryset(self):
         user = self.request.user
 
         if user.is_staff or user.is_superuser:
-            return Contact.objects.all()
+            qs = Contact.objects.all()
+        else:
+            qs = Contact.objects.filter(owner=user.agent_profile)
 
-        return Contact.objects.filter(owner=user.agent_profile)
+        return qs.order_by("-id")  # consistent pagination order
 
     # ---------------------------
     # READ vs WRITE Serializers

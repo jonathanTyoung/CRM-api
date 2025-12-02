@@ -19,13 +19,16 @@ class SourceSerializer(serializers.ModelSerializer):
 
 
 # ---------------------------
-# READ SERIALIZER
+# READ SERIALIZER (SAFE, NESTED)
 # ---------------------------
 
 class ContactSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     source = SourceSerializer(read_only=True)
-    owner = serializers.CharField(source="owner.user.get_full_name", read_only=True)
+    owner = serializers.CharField(
+        source="owner.user.get_full_name",
+        read_only=True
+    )
 
     class Meta:
         model = Contact
@@ -42,7 +45,7 @@ class ContactSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = fields  # everything is read-only
+        read_only_fields = fields  # safe & explicit
 
 
 # ---------------------------
@@ -50,8 +53,6 @@ class ContactSerializer(serializers.ModelSerializer):
 # ---------------------------
 
 class ContactCreateUpdateSerializer(serializers.ModelSerializer):
-
-    # Related fields (IDs instead of nested)
     tag_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False
@@ -65,7 +66,7 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "phone",
-            "notes",        # <-- Added correctly
+            "notes",
             "source_id",
             "tag_ids",
         ]
@@ -78,7 +79,7 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
         source_id = validated_data.pop("source_id", None)
 
         contact = Contact.objects.create(
-            owner=self.context["owner"],             # secure & correct
+            owner=self.context["owner"],
             source=self._get_source(source_id),
             **validated_data
         )
@@ -93,17 +94,17 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
         tag_ids = validated_data.pop("tag_ids", None)
         source_id = validated_data.pop("source_id", None)
 
-        # Set basic fields
+        # Update primitive fields
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
-        # Set source
+        # Update source
         if source_id is not None:
             instance.source = self._get_source(source_id)
 
         instance.save()
 
-        # Update tags only if explicitly provided
+        # Update tags only if provided
         if tag_ids is not None:
             self._set_tags(instance, tag_ids)
 
@@ -113,13 +114,11 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
     # HELPERS
     # ---------------------------
     def _get_source(self, source_id):
-        """Return Source or None safely."""
         if not source_id:
             return None
-        return Source.objects.filter(pk=source_id).first()
+        return Source.objects.filter(id=source_id).first()
 
     def _set_tags(self, contact, tag_ids):
-        """Set tags safely."""
         if tag_ids:
             tags = Tag.objects.filter(id__in=tag_ids)
             contact.tags.set(tags)
