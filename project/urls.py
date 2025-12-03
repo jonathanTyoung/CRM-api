@@ -16,12 +16,18 @@ router.register(r"leads", LeadViewSet, basename="lead")
 router.register(r"opportunities", OpportunityViewSet, basename="opportunity")
 
 urlpatterns = [
-    path("api/", include(router.urls)),     # <-- PREFIX ADDED HERE
     path("admin/", admin.site.urls),
-    path("api/register/", register_user, name="register_user"),
-    path("api/login/", login_user, name="login_user"),
-    path("api/current_user/", current_user, name="current_user"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/tags/", list_tags, name="tags"),
-    path("api/sources/", list_sources, name="sources"),
+
+    # AUTH FIRST
+    path("api/register/", register_user),
+    path("api/login/", login_user),
+    path("api/current_user/", current_user),
+    path("api/token/refresh/", TokenRefreshView.as_view()),
+
+    # META
+    path("api/tags/", list_tags),
+    path("api/sources/", list_sources),
+
+    # ROUTER LAST  ← 🔥 IMPORTANT
+    path("api/", include(router.urls)),
 ]
