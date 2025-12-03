@@ -18,16 +18,16 @@ router.register(r"opportunities", OpportunityViewSet, basename="opportunity")
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # AUTH FIRST
-    path("api/register/", register_user),
-    path("api/login/", login_user),
-    path("api/current_user/", current_user),
-    path("api/token/refresh/", TokenRefreshView.as_view()),
+    # AUTH FIRST (with names restored)
+    path("api/register/", register_user, name="register_user"),
+    path("api/login/", login_user, name="login_user"),
+    path("api/current_user/", current_user, name="current_user"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 
     # META
-    path("api/tags/", list_tags),
-    path("api/sources/", list_sources),
+    path("api/tags/", list_tags, name="tags"),
+    path("api/sources/", list_sources, name="sources"),
 
-    # ROUTER LAST  ← 🔥 IMPORTANT
+    # ROUTER LAST (so it doesn't shadow named views)
     path("api/", include(router.urls)),
 ]
