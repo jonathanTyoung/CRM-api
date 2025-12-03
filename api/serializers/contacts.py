@@ -2,9 +2,9 @@ from rest_framework import serializers
 from api.models import Contact, Tag, Source
 
 
-# ---------------------------
+# ---------------------------------------
 # SUPPORTING SERIALIZERS
-# ---------------------------
+# ---------------------------------------
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,17 +18,14 @@ class SourceSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
-# ---------------------------
-# READ SERIALIZER (SAFE, NESTED)
-# ---------------------------
+# ---------------------------------------
+# READ SERIALIZER (NESTED, SAFE)
+# ---------------------------------------
 
 class ContactSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     source = SourceSerializer(read_only=True)
-    owner = serializers.CharField(
-        source="owner.user.get_full_name",
-        read_only=True
-    )
+    owner = serializers.SerializerMethodField()  # ✔ FIXED
 
     class Meta:
         model = Contact
@@ -45,17 +42,38 @@ class ContactSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = fields  # safe & explicit
+        read_only_fields = fields
 
+    def get_owner(self, obj):
+        """
+        Always returns something useful:
+        - first + last name
+        - OR username
+        - OR email
+        - OR fallback "Unassigned"
+        """
+        user = obj.owner.user
 
-# ---------------------------
+        full_name = user.get_full_name().strip()
+        if full_name:
+            return full_name
+
+        if user.username:
+            return user.username
+
+        if user.email:
+            return user.email
+
+        return "Unassigned"
+        
+
+# ---------------------------------------
 # WRITE SERIALIZER (CREATE + UPDATE)
-# ---------------------------
+# ---------------------------------------
 
 class ContactCreateUpdateSerializer(serializers.ModelSerializer):
     tag_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False
+        child=serializers.IntegerField(), required=False
     )
     source_id = serializers.IntegerField(required=False, allow_null=True)
 
@@ -71,9 +89,7 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
             "tag_ids",
         ]
 
-    # ---------------------------
     # CREATE
-    # ---------------------------
     def create(self, validated_data):
         tag_ids = validated_data.pop("tag_ids", [])
         source_id = validated_data.pop("source_id", None)
@@ -87,32 +103,26 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
         self._set_tags(contact, tag_ids)
         return contact
 
-    # ---------------------------
     # UPDATE
-    # ---------------------------
     def update(self, instance, validated_data):
         tag_ids = validated_data.pop("tag_ids", None)
         source_id = validated_data.pop("source_id", None)
 
-        # Update primitive fields
+        # Primitive fields
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
-        # Update source
         if source_id is not None:
             instance.source = self._get_source(source_id)
 
         instance.save()
 
-        # Update tags only if provided
         if tag_ids is not None:
             self._set_tags(instance, tag_ids)
 
         return instance
 
-    # ---------------------------
-    # HELPERS
-    # ---------------------------
+    # Helpers
     def _get_source(self, source_id):
         if not source_id:
             return None
