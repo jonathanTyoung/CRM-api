@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 
 from api.serializers.opportunities import OpportunitySerializer
+from api.serializers.opportunity_read import OpportunityReadSerializer
 from api.models import Opportunity
 
 
@@ -38,3 +39,8 @@ class OpportunityViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(assigned_agent=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return OpportunitySerializer  # WRITE
+        return OpportunityReadSerializer  # READ

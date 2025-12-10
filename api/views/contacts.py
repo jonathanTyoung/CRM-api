@@ -12,23 +12,23 @@ from api.serializers.contacts import (
 
 
 class ContactViewSet(ModelViewSet):
-    """CRUD operations for contacts with owner scoping and search."""
+    """CRUD operations for contacts with strict owner scoping + search."""
 
     permission_classes = [IsAuthenticated]
 
-    # ---------------------------
+    # ---------------------------------------
     # QUERYSET (scoping + search)
-    # ---------------------------
+    # ---------------------------------------
     def get_queryset(self):
         user = self.request.user
 
-        # Admins see everything, agents see only their own contacts
+        # Admins see everything; agents see only THEIR contacts
         if user.is_staff or user.is_superuser:
             qs = Contact.objects.all()
         else:
             qs = Contact.objects.filter(owner=user.agent_profile)
 
-        # Optional search filtering
+        # Search parameter (simple keyword search)
         search = self.request.query_params.get("search")
         if search:
             qs = qs.filter(
@@ -38,30 +38,24 @@ class ContactViewSet(ModelViewSet):
                 | Q(phone__icontains=search)
             )
 
-        # Stable descending order (latest first)
         return qs.order_by("-id")
 
-    # ---------------------------
-    # READ vs WRITE Serializers
-    # ---------------------------
+    # ---------------------------------------
+    # SELECT SERIALIZER
+    # ---------------------------------------
     def get_serializer_class(self):
-        if self.action in ["create", "update", "partial_update"]:
+        if self.action in ("create", "update", "partial_update"):
             return ContactCreateUpdateSerializer
         return ContactSerializer
 
-    # ---------------------------
-    # EXTRA CONTEXT FOR WRITES
-    # ---------------------------
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["owner"] = self.request.user.agent_profile
-        return context
-
-    # ---------------------------
-    # CREATE
-    # ---------------------------
+    # ---------------------------------------
+    # CREATE CONTACT
+    # ---------------------------------------
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(
+            data=request.data,
+            context={"request": request},  # ensures user.agent_profile is available
+        )
         serializer.is_valid(raise_exception=True)
         contact = serializer.save()
 
@@ -70,15 +64,20 @@ class ContactViewSet(ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    # ---------------------------
-    # UPDATE
-    # ---------------------------
+    # ---------------------------------------
+    # UPDATE CONTACT
+    # ---------------------------------------
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
-        updated = serializer.save()
+        contact = serializer.save()
 
-        return Response(ContactSerializer(updated).data)
+        return Response(ContactSerializer(contact).data)
