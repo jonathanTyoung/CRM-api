@@ -9,7 +9,7 @@ from api.views.opportunities import OpportunityViewSet
 from api.views.meta import list_sources, list_tags
 from rest_framework import routers
 
-router = routers.DefaultRouter(trailing_slash=False)
+router = routers.DefaultRouter()
 router.register(r"agent-profiles", AgentProfileViewSet, basename="agent-profiles")
 router.register(r"contacts", ContactViewSet, basename="contact")
 router.register(r"leads", LeadViewSet, basename="lead")
