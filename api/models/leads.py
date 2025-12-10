@@ -1,10 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
 from .contacts import Contact
 from .sources import Source
 from .lead_groups import LeadGroup
+from .agent_profiles import AgentProfile  # <-- IMPORTANT
+
 
 class Lead(models.Model):
+
     STATUS_CHOICES = [
         ('new', 'New'),
         ('contacted', 'Contacted'),
@@ -15,6 +17,7 @@ class Lead(models.Model):
         ('listed_or_showing', 'Listed/Showing'),
         ('contract_accepted', 'Contract Accepted'),
         ('closed', 'Listed/Closed'),
+        ('converted', 'Converted to Contact'),  # <-- REQUIRED
     ]
 
     TYPE_CHOICES = [
@@ -23,7 +26,7 @@ class Lead(models.Model):
         ('buying_and_selling', 'Buying & Selling'),
     ]
 
-    # 🔥 Lead can stand alone without Contact (correct!)
+    # Lead may or may not have a Contact
     contact = models.ForeignKey(
         Contact,
         on_delete=models.SET_NULL,
@@ -32,14 +35,13 @@ class Lead(models.Model):
         related_name='leads'
     )
 
-    # Basic lead info (SHOULD NOT depend on Contact)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
 
     assigned_agent = models.ForeignKey(
-        User,
+        AgentProfile,
         on_delete=models.CASCADE,
         related_name='assigned_leads'
     )
@@ -62,13 +64,7 @@ class Lead(models.Model):
     )
 
     notes = models.TextField(blank=True)
-
-    source = models.ForeignKey(
-        Source,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    source = models.ForeignKey(Source, on_delete=models.SET_NULL, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -79,28 +75,28 @@ class Lead(models.Model):
     def __str__(self):
         return f"Lead: {self.first_name} {self.last_name}"
 
-    # 🔥 Conversion Logic (Lead ➜ Contact)
+    # ------------------------------------------
+    # Lead ➜ Contact conversion
+    # ------------------------------------------
     def convert_to_contact(self):
-        """
-        Converts this Lead into a Contact and associates them.
-        """
+
+        # If already converted, return existing contact
         if self.contact:
-            # Lead is already converted
             return self.contact
 
-        # Create new Contact
-        new_contact = Contact.objects.create(
+        contact = Contact.objects.create(
             first_name=self.first_name,
             last_name=self.last_name,
             email=self.email,
             phone=self.phone,
-            owner=self.assigned_agent.agentprofile,  # agentprofile required
+            owner=self.assigned_agent,   # <-- agentprofile
             source=self.source,
             relationship_type='prospect',
         )
 
-        self.contact = new_contact
+        # link back
+        self.contact = contact
         self.status = 'converted'
         self.save()
 
-        return new_contact
+        return contact

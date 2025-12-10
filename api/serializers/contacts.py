@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from api.models import Contact, Tag, Source
 
@@ -5,6 +6,7 @@ from api.models import Contact, Tag, Source
 # ---------------------------------------
 # SUPPORTING SERIALIZERS
 # ---------------------------------------
+
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,10 +24,11 @@ class SourceSerializer(serializers.ModelSerializer):
 # READ SERIALIZER (NESTED, SAFE)
 # ---------------------------------------
 
+
 class ContactSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     source = SourceSerializer(read_only=True)
-    owner = serializers.SerializerMethodField()  # ✔ FIXED
+    owner = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Contact
@@ -36,6 +39,7 @@ class ContactSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "notes",
+            "relationship_type",
             "owner",
             "source",
             "tags",
@@ -45,36 +49,22 @@ class ContactSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_owner(self, obj):
-        """
-        Always returns something useful:
-        - first + last name
-        - OR username
-        - OR email
-        - OR fallback "Unassigned"
-        """
+        """Return useful structured owner info."""
         user = obj.owner.user
 
-        full_name = user.get_full_name().strip()
-        if full_name:
-            return full_name
+        return {
+            "id": user.id,
+            "name": user.get_full_name() or user.username or user.email,
+            "email": user.email,
+        }
 
-        if user.username:
-            return user.username
-
-        if user.email:
-            return user.email
-
-        return "Unassigned"
-        
 
 # ---------------------------------------
 # WRITE SERIALIZER (CREATE + UPDATE)
 # ---------------------------------------
 
 class ContactCreateUpdateSerializer(serializers.ModelSerializer):
-    tag_ids = serializers.ListField(
-        child=serializers.IntegerField(), required=False
-    )
+    tag_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     source_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
@@ -85,25 +75,25 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "notes",
+            "relationship_type",
             "source_id",
             "tag_ids",
         ]
 
-    # CREATE
     def create(self, validated_data):
         tag_ids = validated_data.pop("tag_ids", [])
         source_id = validated_data.pop("source_id", None)
 
+        # Owner ALWAYS comes from logged-in agent
+        agent_profile = self.context["request"].user.agent_profile
+
         contact = Contact.objects.create(
-            owner=self.context["owner"],
-            source=self._get_source(source_id),
-            **validated_data
+            owner=agent_profile, source=self._get_source(source_id), **validated_data
         )
 
         self._set_tags(contact, tag_ids)
         return contact
 
-    # UPDATE
     def update(self, instance, validated_data):
         tag_ids = validated_data.pop("tag_ids", None)
         source_id = validated_data.pop("source_id", None)
@@ -112,17 +102,22 @@ class ContactCreateUpdateSerializer(serializers.ModelSerializer):
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
+        # Update source
         if source_id is not None:
             instance.source = self._get_source(source_id)
 
         instance.save()
 
+        # Update tags ONLY if tag_ids provided
         if tag_ids is not None:
             self._set_tags(instance, tag_ids)
 
         return instance
 
+    # -------------------------
     # Helpers
+    # -------------------------
+
     def _get_source(self, source_id):
         if not source_id:
             return None
