@@ -6,9 +6,7 @@ from api.models.leads import Lead
 
 class Opportunity(models.Model):
     owner = models.ForeignKey(
-        AgentProfile,
-        on_delete=models.CASCADE,
-        related_name="opportunities"
+        AgentProfile, on_delete=models.CASCADE, related_name="opportunities"
     )
 
     lead = models.ForeignKey(
@@ -31,14 +29,19 @@ class Opportunity(models.Model):
     mls_id = models.CharField(max_length=50, null=True, blank=True)
 
     stage = models.CharField(
-        max_length=20,
+        max_length=40,
         choices=[
             ("prospecting", "Prospecting"),
             ("showing", "Showing"),
-            ("offer", "Offer Made"),
-            ("contract", "Under Contract"),
-            ("closing", "Closing Scheduled"),
+            ("offer_made", "Offer Made"),
+            ("under_contract", "Under Contract"),
             ("closed", "Closed"),
+            
+            # Seller-only:
+            ("appointment_set", "Appointment Set"),
+            ("appointment_held", "Appointment Held"),
+            ("agreement_signed", "Agreement Signed"),
+            ("listed", "Listed"),
         ],
         default="prospecting",
     )
