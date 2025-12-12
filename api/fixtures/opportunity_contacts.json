@@ -1,0 +1,20 @@
+[
+{
+  "model": "api.opportunitycontact",
+  "pk": 1,
+  "fields": {
+    "opportunity": 1,
+    "contact": 3,
+    "role": ""
+  }
+},
+{
+  "model": "api.opportunitycontact",
+  "pk": 2,
+  "fields": {
+    "opportunity": 1,
+    "contact": 1,
+    "role": ""
+  }
+}
+]

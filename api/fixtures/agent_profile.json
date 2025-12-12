@@ -1,0 +1,47 @@
+[
+{
+  "model": "api.agentprofile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "phone_number": null,
+    "agency_name": null,
+    "license_number": null,
+    "profile_photo_url": null,
+    "office_location": null,
+    "role": "agent",
+    "created_at": "2025-12-10T17:00:21.912Z",
+    "updated_at": "2025-12-10T17:00:21.912Z"
+  }
+},
+{
+  "model": "api.agentprofile",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "phone_number": null,
+    "agency_name": null,
+    "license_number": null,
+    "profile_photo_url": null,
+    "office_location": null,
+    "role": "agent",
+    "created_at": "2025-12-10T17:02:28.375Z",
+    "updated_at": "2025-12-10T17:02:28.375Z"
+  }
+},
+{
+  "model": "api.agentprofile",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "phone_number": null,
+    "agency_name": null,
+    "license_number": null,
+    "profile_photo_url": null,
+    "office_location": null,
+    "role": "agent",
+    "created_at": "2025-12-10T17:15:10.167Z",
+    "updated_at": "2025-12-10T17:15:10.167Z"
+  }
+}
+]
