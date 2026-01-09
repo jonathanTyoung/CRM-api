@@ -6,12 +6,12 @@ from .tags import Tag
 
 class Contact(models.Model):
     RELATIONSHIP_CHOICES = [
-        ('prospect', 'Prospect'),
-        ('client', 'Client'),
-        ('past_client', 'Past Client'),
-        ('referral', 'Referral Source'),
-        ('vendor', 'Vendor / Business Contact'),
-        ('sphere', 'Sphere of Influence'),
+        ("prospect", "Prospect"),
+        ("client", "Client"),
+        ("past_client", "Past Client"),
+        ("referral", "Referral Source"),
+        ("vendor", "Vendor / Business Contact"),
+        ("sphere", "Sphere of Influence"),
     ]
 
     first_name = models.CharField(max_length=255)
@@ -23,24 +23,19 @@ class Contact(models.Model):
 
     owner = models.ForeignKey(
         AgentProfile,
-        on_delete=models.CASCADE,
-        related_name="contacts"
+        on_delete=models.SET_NULL,  # ✅ Keeps contacts, sets owner to NULL
+        null=True,  # ✅ Required - allows NULL values
+        blank=True,  # ✅ Optional - allows forms to be empty
+        related_name="contacts",
     )
 
     relationship_type = models.CharField(
-        max_length=20,
-        choices=RELATIONSHIP_CHOICES,
-        default='prospect'
+        max_length=20, choices=RELATIONSHIP_CHOICES, default="prospect"
     )
 
-    source = models.ForeignKey(
-        Source,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    source = models.ForeignKey(Source, on_delete=models.SET_NULL, null=True, blank=True)
 
-    tags = models.ManyToManyField(Tag, through='ContactTag')
+    tags = models.ManyToManyField(Tag, through="ContactTag")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
