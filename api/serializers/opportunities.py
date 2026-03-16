@@ -6,9 +6,7 @@ from api.serializers.opportunity_contact import OpportunityContactSerializer
 class OpportunitySerializer(serializers.ModelSerializer):
     # MUST be writable or DRF drops the data
     participants = OpportunityContactSerializer(
-        many=True,
-        required=False,
-        write_only=True
+        many=True, required=False, write_only=True
     )
 
     class Meta:
@@ -46,9 +44,9 @@ class OpportunitySerializer(serializers.ModelSerializer):
         for item in participants:
 
             if "contact" not in item:
-                raise serializers.ValidationError({
-                    "participants": "Each participant must include a 'contact' field."
-                })
+                raise serializers.ValidationError(
+                    {"participants": "Each participant must include a 'contact' field."}
+                )
 
             raw_contact = item["contact"]
 
@@ -60,26 +58,25 @@ class OpportunitySerializer(serializers.ModelSerializer):
                 try:
                     contact_id = int(raw_contact)
                 except (ValueError, TypeError):
-                    raise serializers.ValidationError({
-                        "participants": f"Invalid contact id: {raw_contact}"
-                    })
+                    raise serializers.ValidationError(
+                        {"participants": f"Invalid contact id: {raw_contact}"}
+                    )
 
             # Now validate existence AND ownership
             if not Contact.objects.filter(id=contact_id, owner=agent_profile).exists():
-                raise serializers.ValidationError({
-                    "participants": f"Contact {contact_id} does not belong to this agent."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "participants": f"Contact {contact_id} does not belong to this agent."
+                    }
+                )
 
         return attrs
-
-
-
 
     # ------------------------------------------------------------
     # CREATE
     # ------------------------------------------------------------
     def create(self, validated_data):
-        participants = self.initial_data.get("participants", [])  # IMPORTANT
+        participants = self.initial_data.get("participants", [])
 
         request_user = self.context["request"].user
         agent_profile = request_user.agent_profile
@@ -94,16 +91,23 @@ class OpportunitySerializer(serializers.ModelSerializer):
             **validated_data,
         )
 
+        seen = set()
         for entry in participants:
             contact_id = entry.get("contact") or entry.get("contact_id")
 
             if hasattr(contact_id, "id"):
                 contact_id = contact_id.id
 
+            contact_id = int(contact_id)
+
+            if contact_id in seen:
+                continue
+            seen.add(contact_id)
+
             OpportunityContact.objects.create(
                 opportunity=opportunity,
                 contact_id=contact_id,
-                role=entry.get("role", "")
+                role=entry.get("role", ""),
             )
 
         return opportunity
@@ -112,12 +116,11 @@ class OpportunitySerializer(serializers.ModelSerializer):
     # UPDATE
     # ------------------------------------------------------------
     def update(self, instance, validated_data):
-        # DRF sometimes still includes "participants" in validated_data — SKIP IT
         participants_data = self.initial_data.get("participants", None)
 
         # Update normal scalar fields
         for attr, value in validated_data.items():
-            if attr == "participants":  # <-- CRITICAL FIX
+            if attr == "participants":
                 continue
             setattr(instance, attr, value)
         instance.save()
@@ -126,10 +129,10 @@ class OpportunitySerializer(serializers.ModelSerializer):
         if participants_data is not None:
             OpportunityContact.objects.filter(opportunity=instance).delete()
 
+            seen = set()
             for entry in participants_data:
                 raw = entry.get("contact") or entry.get("contact_id")
 
-                # Normalize formats
                 if isinstance(raw, dict):
                     contact_id = raw.get("id")
                 elif hasattr(raw, "id"):
@@ -142,14 +145,16 @@ class OpportunitySerializer(serializers.ModelSerializer):
                         {"participants": "Invalid contact format."}
                     )
 
+                contact_id = int(contact_id)
+
+                if contact_id in seen:
+                    continue
+                seen.add(contact_id)
+
                 OpportunityContact.objects.create(
                     opportunity=instance,
-                    contact_id=int(contact_id),
-                    role=entry.get("role", "")
+                    contact_id=contact_id,
+                    role=entry.get("role", ""),
                 )
 
         return instance
-
-
-
-
