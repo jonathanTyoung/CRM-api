@@ -48,8 +48,8 @@ class OpportunityContactTests(TestCase):
     def test_prevent_duplicate_participants(self):
         opp = Opportunity.objects.create(
             title="Test Deal",
-            owner=self.agent_profile,          # REQUIRED
-            assigned_agent=self.user,          # REQUIRED
+            owner=self.agent_profile,
+            assigned_agent=self.agent_profile,
         )
 
         # First link OK

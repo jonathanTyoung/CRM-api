@@ -25,7 +25,7 @@ class OpportunityViewSet(ModelViewSet):
         user = self.request.user
         qs = (
             Opportunity.objects
-            .select_related("lead", "assigned_agent", "owner")
+            .select_related("lead", "assigned_agent__user", "owner__user")
             .prefetch_related("participants__contact")
             .order_by("-created_at")
         )
@@ -35,10 +35,10 @@ class OpportunityViewSet(ModelViewSet):
             return qs
 
         # Agents see only their opportunities
-        return qs.filter(assigned_agent=user)
+        return qs.filter(assigned_agent=user.agent_profile)
 
     def perform_create(self, serializer):
-        serializer.save(assigned_agent=self.request.user)
+        serializer.save(assigned_agent=self.request.user.agent_profile)
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:

@@ -18,14 +18,16 @@ class LeadViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        qs = Lead.objects.select_related(
+            "assigned_agent", "contact", "source", "group"
+        ).order_by("-created_at")
+
         # Admins/superusers can see all leads
         if user.is_staff or user.is_superuser:
-            return Lead.objects.all().order_by("-created_at")
+            return qs
 
         # Agents only see their assigned leads
-        return Lead.objects.filter(
-            assigned_agent=user
-        ).order_by("-created_at")
+        return qs.filter(assigned_agent=user.agent_profile)
 
     # ---------------------------------
     # SERIALIZER PICKER

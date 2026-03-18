@@ -24,9 +24,9 @@ class ContactViewSet(ModelViewSet):
 
         # Admins see everything; agents see only THEIR contacts
         if user.is_staff or user.is_superuser:
-            qs = Contact.objects.all()
+            qs = Contact.objects.select_related("owner__user", "source").prefetch_related("tags")
         else:
-            qs = Contact.objects.filter(owner=user.agent_profile)
+            qs = Contact.objects.select_related("owner__user", "source").prefetch_related("tags").filter(owner=user.agent_profile)
 
         # Search parameter (simple keyword search)
         search = self.request.query_params.get("search")

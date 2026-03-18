@@ -15,4 +15,4 @@ from .sources import Source
 from .tags import Tag
 from .transfer_requests import TransferRequest
 from .opportunities import Opportunity
-from .opportinty_contact import OpportunityContact
+from .opportunity_contact import OpportunityContact

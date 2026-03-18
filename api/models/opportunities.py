@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User
 from api.models.agent_profiles import AgentProfile
 from api.models.leads import Lead
 
@@ -52,8 +51,10 @@ class Opportunity(models.Model):
     notes = models.TextField(null=True, blank=True)
 
     assigned_agent = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
+        AgentProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="assigned_opportunities",
     )
 

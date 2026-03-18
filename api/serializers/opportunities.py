@@ -87,7 +87,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
 
         opportunity = Opportunity.objects.create(
             owner=agent_profile,
-            assigned_agent=request_user,
+            assigned_agent=agent_profile,
             **validated_data,
         )
 

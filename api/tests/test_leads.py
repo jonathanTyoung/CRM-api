@@ -45,6 +45,8 @@ class LeadTests(APITestCase):
         )
 
         self.payload = {
+            "first_name": "Carl",
+            "last_name": "Buyer",
             "contact": self.contact.id,
             "type": "buying",
             "status": "new",
@@ -62,7 +64,7 @@ class LeadTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         lead = Lead.objects.get(id=res.data["id"])
-        self.assertEqual(lead.assigned_agent, self.user)
+        self.assertEqual(lead.assigned_agent, self.user.agent_profile)
 
     # ------------------------------------------------------------
     # LIST

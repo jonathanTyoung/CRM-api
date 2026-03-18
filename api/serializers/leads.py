@@ -14,10 +14,10 @@ class LeadSerializer(serializers.ModelSerializer):
 
     # Optional but very helpful in UI
     assigned_agent_first_name = serializers.CharField(
-        source="assigned_agent.first_name", read_only=True
+        source="assigned_agent.user.first_name", read_only=True
     )
     assigned_agent_last_name = serializers.CharField(
-        source="assigned_agent.last_name", read_only=True
+        source="assigned_agent.user.last_name", read_only=True
     )
 
     class Meta:
@@ -88,7 +88,7 @@ class LeadCreateUpdateSerializer(serializers.ModelSerializer):
         group = validated_data.pop("group", None)
 
         lead = Lead.objects.create(
-            assigned_agent=user,
+            assigned_agent=user.agent_profile,
             contact=contact,
             source=source,
             group=group,

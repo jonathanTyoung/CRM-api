@@ -66,8 +66,10 @@ class OpportunityTests(APITestCase):
         # LEAD for agent1
         # -----------------------
         self.lead_agent1 = Lead.objects.create(
+            first_name="John",
+            last_name="Doe",
             contact=self.contact_agent1,
-            assigned_agent=self.agent1,
+            assigned_agent=self.agent1_profile,
             type="buying",
             status="new",
             source=None,
@@ -78,7 +80,7 @@ class OpportunityTests(APITestCase):
         # -----------------------
         self.opportunity = Opportunity.objects.create(
             owner=self.agent1_profile,
-            assigned_agent=self.agent1,
+            assigned_agent=self.agent1_profile,
             title="John Doe - Buyer",
             deal_type="buyer",
             stage="prospecting",
@@ -152,10 +154,10 @@ class OpportunityTests(APITestCase):
     def test_agent_can_update_own_opportunity(self):
         self.client.force_authenticate(self.agent1)
         url = reverse("opportunity-detail", args=[self.opportunity.id])
-        res = self.client.patch(url, {"stage": "contract"}, format="json")
+        res = self.client.patch(url, {"stage": "under_contract"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.opportunity.refresh_from_db()
-        self.assertEqual(self.opportunity.stage, "contract")
+        self.assertEqual(self.opportunity.stage, "under_contract")
 
     def test_agent_cannot_update_other_agents_opportunity(self):
         self.client.force_authenticate(self.agent2)
@@ -166,7 +168,7 @@ class OpportunityTests(APITestCase):
     def test_admin_can_update_any_opportunity(self):
         self.client.force_authenticate(self.admin)
         url = reverse("opportunity-detail", args=[self.opportunity.id])
-        res = self.client.patch(url, {"stage": "closing"}, format="json")
+        res = self.client.patch(url, {"stage": "closed"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     # ----------------------------------------------------
@@ -194,27 +196,27 @@ class OpportunityTests(APITestCase):
     # FILTERS
     # ----------------------------------------------------
     def test_filter_opportunities_by_stage(self):
-        self.opportunity.stage = "contract"
+        self.opportunity.stage = "under_contract"
         self.opportunity.save()
 
         Opportunity.objects.create(
             owner=self.agent1_profile,
-            assigned_agent=self.agent1,
+            assigned_agent=self.agent1_profile,
             title="Another",
             deal_type="buyer",
             stage="prospecting",
         )
 
         self.client.force_authenticate(self.agent1)
-        res = self.client.get(f"{self.list_url}?stage=contract")
+        res = self.client.get(f"{self.list_url}?stage=under_contract")
 
         self.assertEqual(len(res.data["results"]), 1)
-        self.assertEqual(res.data["results"][0]["stage"], "contract")
+        self.assertEqual(res.data["results"][0]["stage"], "under_contract")
 
     def test_filter_opportunities_by_deal_type(self):
         Opportunity.objects.create(
             owner=self.agent1_profile,
-            assigned_agent=self.agent1,
+            assigned_agent=self.agent1_profile,
             title="Seller Deal",
             deal_type="seller",
             stage="prospecting",
@@ -229,17 +231,17 @@ class OpportunityTests(APITestCase):
     def test_filter_opportunities_by_assigned_agent(self):
         Opportunity.objects.create(
             owner=self.agent2_profile,
-            assigned_agent=self.agent2,
+            assigned_agent=self.agent2_profile,
             title="Agent2 Deal",
             deal_type="buyer",
             stage="prospecting",
         )
 
         self.client.force_authenticate(self.admin)
-        res = self.client.get(f"{self.list_url}?assigned_agent={self.agent2.id}")
+        res = self.client.get(f"{self.list_url}?assigned_agent={self.agent2_profile.id}")
 
         self.assertEqual(len(res.data["results"]), 1)
-        self.assertEqual(res.data["results"][0]["assigned_agent"], self.agent2.id)
+        self.assertEqual(res.data["results"][0]["assigned_agent"], self.agent2_profile.id)
 
     # ----------------------------------------------------
     # PAGINATION
@@ -248,7 +250,7 @@ class OpportunityTests(APITestCase):
         for i in range(30):
             Opportunity.objects.create(
                 owner=self.agent1_profile,
-                assigned_agent=self.agent1,
+                assigned_agent=self.agent1_profile,
                 title=f"Deal {i}",
                 deal_type="buyer",
                 stage="prospecting",
@@ -264,7 +266,7 @@ class OpportunityTests(APITestCase):
         for i in range(15):
             Opportunity.objects.create(
                 owner=self.agent1_profile,
-                assigned_agent=self.agent1,
+                assigned_agent=self.agent1_profile,
                 title=f"Deal {i}",
                 deal_type="buyer",
                 stage="prospecting",
@@ -279,7 +281,7 @@ class OpportunityTests(APITestCase):
         for i in range(25):
             Opportunity.objects.create(
                 owner=self.agent1_profile,
-                assigned_agent=self.agent1,
+                assigned_agent=self.agent1_profile,
                 title=f"Deal {i}",
                 deal_type="buyer",
                 stage="prospecting",
