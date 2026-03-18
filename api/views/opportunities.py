@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from api.serializers.opportunities import OpportunitySerializer
 from api.serializers.opportunity_read import OpportunityReadSerializer
 from api.models import Opportunity
+from api.permissions import is_crm_admin
 
 
 class StandardPagination(PageNumberPagination):
@@ -30,11 +31,9 @@ class OpportunityViewSet(ModelViewSet):
             .order_by("-created_at")
         )
 
-        # Admins see everything
-        if hasattr(user, "agent_profile") and user.agent_profile.role == "admin":
+        if is_crm_admin(user):
             return qs
 
-        # Agents see only their opportunities
         return qs.filter(assigned_agent=user.agent_profile)
 
     def perform_create(self, serializer):

@@ -2,6 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from api.models import AgentProfile
 from api.serializers.agent_profiles import AgentProfileSerializer
+from api.permissions import is_crm_admin
 
 
 class AgentProfileViewSet(ModelViewSet):
@@ -14,7 +15,7 @@ class AgentProfileViewSet(ModelViewSet):
         user = self.request.user
         
         # Admins can see all profiles
-        if user.is_staff or user.is_superuser:
+        if is_crm_admin(user):
             return AgentProfile.objects.all()
 
         # Regular agents can see only their own profile

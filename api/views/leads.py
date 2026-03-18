@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -5,6 +6,7 @@ from rest_framework import status
 
 from api.models import Lead
 from api.serializers.leads import LeadSerializer, LeadCreateUpdateSerializer
+from api.permissions import is_crm_admin
 
 
 class LeadViewSet(ModelViewSet):
@@ -19,15 +21,26 @@ class LeadViewSet(ModelViewSet):
         user = self.request.user
 
         qs = Lead.objects.select_related(
-            "assigned_agent", "contact", "source", "group"
+            "assigned_agent__user", "contact", "source", "group"
         ).order_by("-created_at")
 
-        # Admins/superusers can see all leads
-        if user.is_staff or user.is_superuser:
-            return qs
+        if not is_crm_admin(user):
+            qs = qs.filter(assigned_agent=user.agent_profile)
 
-        # Agents only see their assigned leads
-        return qs.filter(assigned_agent=user.agent_profile)
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(phone__icontains=search)
+            )
+
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        return qs
 
     # ---------------------------------
     # SERIALIZER PICKER

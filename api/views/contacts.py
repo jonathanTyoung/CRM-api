@@ -9,6 +9,7 @@ from api.serializers.contacts import (
     ContactSerializer,
     ContactCreateUpdateSerializer,
 )
+from api.permissions import is_crm_admin
 
 
 class ContactViewSet(ModelViewSet):
@@ -23,7 +24,7 @@ class ContactViewSet(ModelViewSet):
         user = self.request.user
 
         # Admins see everything; agents see only THEIR contacts
-        if user.is_staff or user.is_superuser:
+        if is_crm_admin(user):
             qs = Contact.objects.select_related("owner__user", "source").prefetch_related("tags")
         else:
             qs = Contact.objects.select_related("owner__user", "source").prefetch_related("tags").filter(owner=user.agent_profile)
