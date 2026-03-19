@@ -104,10 +104,10 @@ class OpportunitySerializer(serializers.ModelSerializer):
                 continue
             seen.add(contact_id)
 
-            OpportunityContact.objects.create(
+            OpportunityContact.objects.get_or_create(
                 opportunity=opportunity,
                 contact_id=contact_id,
-                role=entry.get("role", ""),
+                defaults={"role": entry.get("role", "")},
             )
 
         return opportunity

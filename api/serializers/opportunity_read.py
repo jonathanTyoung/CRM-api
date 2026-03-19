@@ -1,9 +1,25 @@
 from rest_framework import serializers
-from api.models import Opportunity
-from api.serializers.opportunity_contact import OpportunityContactSerializer
+from api.models import Opportunity, OpportunityContact
+
+
+class ParticipantReadSerializer(serializers.ModelSerializer):
+    contact = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OpportunityContact
+        fields = ["id", "contact", "role"]
+
+    def get_contact(self, obj):
+        return {
+            "id": obj.contact.id,
+            "first_name": obj.contact.first_name,
+            "last_name": obj.contact.last_name,
+            "email": obj.contact.email,
+        }
+
 
 class OpportunityReadSerializer(serializers.ModelSerializer):
-    participants = OpportunityContactSerializer(many=True, read_only=True)
+    participants = ParticipantReadSerializer(many=True, read_only=True)
 
     class Meta:
         model = Opportunity

@@ -39,6 +39,16 @@ class ContactViewSet(ModelViewSet):
                 | Q(phone__icontains=search)
             )
 
+        # Relationship type filter
+        relationship_type = self.request.query_params.get("relationship_type")
+        if relationship_type:
+            qs = qs.filter(relationship_type=relationship_type)
+
+        # Tag filter (by tag ID)
+        tag_id = self.request.query_params.get("tag")
+        if tag_id:
+            qs = qs.filter(tags__id=tag_id)
+
         return qs.order_by("-id")
 
     # ---------------------------------------

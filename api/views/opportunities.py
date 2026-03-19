@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -31,10 +32,20 @@ class OpportunityViewSet(ModelViewSet):
             .order_by("-created_at")
         )
 
-        if is_crm_admin(user):
-            return qs
+        if not is_crm_admin(user):
+            qs = qs.filter(assigned_agent=user.agent_profile)
 
-        return qs.filter(assigned_agent=user.agent_profile)
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(property_address__icontains=search)
+            )
+
+        contact_id = self.request.query_params.get("contact")
+        if contact_id:
+            qs = qs.filter(participants__contact_id=contact_id)
+
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(assigned_agent=self.request.user.agent_profile)
